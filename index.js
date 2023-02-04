@@ -15,14 +15,14 @@ app.get('/', (req, res) => {
 })
 
 app.listen(port, () => {
-    console.log(`${chalk.green(`Server online!`)}`)
+  console.log(`${chalk.green(`Server online!`)}`)
 })
 
 // Code
 const fs = require('fs');
 const Discord = require('discord.js');
 const client = new Discord.Client({
-    disableEveryone: true
+  disableEveryone: true
 });
 client.brain = require('./util/chatSend');
 client.em = require("./util/embed")
@@ -31,43 +31,77 @@ client.aliases = new Discord.Collection();
 
 
 client.db = require('quick.db');
-owner = "lol"
+owner = "//settings#8880"
 
 client.on('ready', () => {
   console.log(`${client.user.username} is Online`)
-setInterval(async () => {
-const statuses = [`awesome chatbot`, `| Made by ${owner}`]
-   client.user.setActivity(statuses[Math.floor(Math.random() * statuses.length)], { type: "STREAMING", url: "https://www.twitch.tv/discord"})
-}, 10000)
+  setInterval(async () => {
+    const statuses = [`//Settings I Corporation`, `| Made by ${owner}`]
+    client.user.setActivity(statuses[Math.floor(Math.random() * statuses.length)], { type: "STREAMING", url: "https://discord.gg/f3WHUSsSK7" })
+  }, 10000)
 });
 
 // Event Handler
-fs.readdir('./events/', (err, files) => { 
-    if (err) return console.error(err); 
-    files.forEach(file => {
-        const eventFunction = require(`./events/${file}`); 
-        if (eventFunction.disabled) return;
+fs.readdir('./events/', (err, files) => {
+  if (err) return console.error(err);
+  files.forEach(file => {
+    const eventFunction = require(`./events/${file}`);
+    if (eventFunction.disabled) return;
 
-        const event = eventFunction.event || file.split('.')[0]; 
-        const emitter = (typeof eventFunction.emitter === 'string' ? client[eventFunction.emitter] : eventFunction.emitter) || client;
-        const once = eventFunction.once; 
+    const event = eventFunction.event || file.split('.')[0];
+    const emitter = (typeof eventFunction.emitter === 'string' ? client[eventFunction.emitter] : eventFunction.emitter) || client;
+    const once = eventFunction.once;
 
-        try {
-            emitter[once ? 'once' : 'on'](event, (...args) => eventFunction.run(...args, client)); 
-        } catch (error) {
-            console.error(error.stack); 
-        }
-    });
+    try {
+      emitter[once ? 'once' : 'on'](event, (...args) => eventFunction.run(...args, client));
+    } catch (error) {
+      console.error(error.stack);
+    }
+  });
+});
+
+//connect to openAI API
+const { Configuration, OpenAIApi } = require('openai');
+const configuration = new Configuration({
+  organization: process.env.OPENAI_ORG,
+  apiKey: process.env.OPENAI_KEY,
+});
+
+const openai = new OpenAIApi(configuration);
+
+// Check for when a message is sent on discord
+client.on('messageCreate', async function(message) {
+  try {
+    if (message.author.bot) return;
+    //ChatGPT reply
+
+    const gptRespone = await openai.createCompletion({
+      model: "davinci",
+      prompt: `ChatGPT is a friendly chatbot.\n\
+            ChatGPT: Hello, how are you?\n\
+            ${message.author.username}: ${message.content}\n\
+            ChatGPT:`,
+      temperature: 0.7,
+      max_tokens: 100,
+      stop: ["ChatGPT:", `${message.author.username}:`],
+
+    })
+
+    message.reply(`${gptRespone.data.choices[0].text}`)
+
+  } catch (err) {
+    console.log(err)
+  }
 });
 
 // Command Handler
 client.on("message", async message => {
   if (message.author.bot || message.channel.type === "dm") return;
-// command stuff
+  // command stuff
   let messageArray = message.content.split(" "),
     cmd = messageArray[0].toLowerCase(),
     args = messageArray.slice(1),
-    prefix = "."; // Add Prefix
+    prefix = "/"; // Add Prefix
 
   if (!message.content.startsWith(prefix)) return;
   let commandfile = client.commands.get(cmd.slice(prefix.length)) || client.commands.get(client.aliases.get(cmd.slice(prefix.length)));
@@ -87,17 +121,17 @@ fs.readdir("./commands/", (err, files) => {
     console.log(`Loaded - ${f} | ${pull.config.aliases}`)
 
     client.commands.set(pull.config.name, pull);
-if (pull.config.aliases) pull.config.aliases.forEach(alias => client.aliases.set(alias, pull.config.name))
+    if (pull.config.aliases) pull.config.aliases.forEach(alias => client.aliases.set(alias, pull.config.name))
   });
 });
 
 client.on("message", async message => {
   if (message.channel.type === "dm") {
     if (message.author.bot) return;
-    const chat = new Chat({ name: "Put Your Chatbot name here", gender: "Put your chatbot gender here", developer_name: "Put Your Name Here", user: "12345678910", language: "en" }); //put a random id here
+    const chat = new Chat({ name: "//Settings I Corporation", gender: "male", developer_name: "//Settings", user: "1022202412846547035", language: "en" }); //put a random id here
     message.channel.startTyping();
     let reply = chat.chat(message.content).then(reply => {
-        message.sendInline(reply, { allowedMentions: { repliedUser: false } });
+      message.sendInline(reply, { allowedMentions: { repliedUser: false } });
     })
     message.channel.stopTyping();
   }
